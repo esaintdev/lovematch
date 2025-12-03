@@ -170,6 +170,15 @@ button {
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  /* Mobile touch optimization */
+  -webkit-tap-highlight-color: rgba(255, 107, 107, 0.3);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 10;
+  width: 100%;
+  min-height: 48px;
+  /* iOS minimum touch target */
 }
 
 button:hover {
@@ -180,6 +189,7 @@ button:hover {
 
 button:active {
   transform: translateY(0);
+  background: linear-gradient(135deg, #ff8787 0%, #ffa07a 100%);
 }
 
 /* Result Section */
@@ -311,8 +321,13 @@ button:active {
   }
 
   button {
-    padding: 14px;
+    padding: 16px 20px;
     font-size: 1rem;
+    min-height: 52px;
+    /* Larger touch target on mobile */
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+    /* Extra space to prevent keyboard overlay */
   }
 
   .percentage {
@@ -331,6 +346,16 @@ button:active {
   .result {
     padding: 1.5rem;
     min-height: 250px;
+  }
+
+  /* Ensure form is scrollable when keyboard is open */
+  .love-form {
+    padding-bottom: 1rem;
+  }
+
+  .calculator-form {
+    position: relative;
+    z-index: 1;
   }
 }
 
