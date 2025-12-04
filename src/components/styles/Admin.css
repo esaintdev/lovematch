@@ -373,7 +373,7 @@
     align-items: flex-start;
     gap: 1rem;
 }
-
+ 
 .message-text {
     flex: 1;
     color: #555;
