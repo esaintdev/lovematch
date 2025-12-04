@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import './styles/Admin.css';
 
 const MatchHistory = () => {
@@ -7,22 +8,50 @@ const MatchHistory = () => {
     const [sortBy, setSortBy] = useState('date');
 
     useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem('matchHistory') || '[]');
-        setHistory(saved);
+        fetchHistory();
     }, []);
 
-    const clearHistory = () => {
-        if (window.confirm('Clear all match history? This cannot be undone!')) {
-            localStorage.removeItem('matchHistory');
-            setHistory([]);
+    const fetchHistory = async () => {
+        const { data, error } = await supabase
+            .from('matches')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching history:', error);
+        } else {
+            setHistory(data || []);
         }
     };
 
-    const deleteMatch = (index) => {
-        const updated = [...history];
-        updated.splice(index, 1);
-        localStorage.setItem('matchHistory', JSON.stringify(updated));
-        setHistory(updated);
+    const clearHistory = async () => {
+        if (window.confirm('Clear all match history? This cannot be undone!')) {
+            const { error } = await supabase
+                .from('matches')
+                .delete()
+                .neq('id', 0); // Delete all rows where id is not 0 (effectively all)
+
+            if (error) {
+                console.error('Error clearing history:', error);
+                alert('Failed to clear history');
+            } else {
+                setHistory([]);
+            }
+        }
+    };
+
+    const deleteMatch = async (id) => {
+        const { error } = await supabase
+            .from('matches')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting match:', error);
+            alert('Failed to delete match');
+        } else {
+            setHistory(history.filter(match => match.id !== id));
+        }
     };
 
     const filteredHistory = history.filter(match =>
@@ -38,7 +67,7 @@ const MatchHistory = () => {
                 return a.percentage - b.percentage;
             case 'date':
             default:
-                return new Date(b.timestamp) - new Date(a.timestamp);
+                return new Date(b.created_at) - new Date(a.created_at);
         }
     });
 
@@ -90,8 +119,8 @@ const MatchHistory = () => {
                 </div>
             ) : (
                 <div className="history-list">
-                    {sortedHistory.map((match, index) => (
-                        <div key={index} className="history-item">
+                    {sortedHistory.map((match) => (
+                        <div key={match.id} className="history-item">
                             <div className="match-emoji">{getMatchEmoji(match.percentage)}</div>
                             <div className="match-details">
                                 <div className="match-names">
@@ -99,9 +128,9 @@ const MatchHistory = () => {
                                 </div>
                                 <div className="match-percentage">{match.percentage}%</div>
                                 <div className="match-message">{match.message}</div>
-                                <div className="match-date">{formatDate(match.timestamp)}</div>
+                                <div className="match-date">{formatDate(match.created_at)}</div>
                             </div>
-                            <button onClick={() => deleteMatch(index)} className="delete-btn-small">
+                            <button onClick={() => deleteMatch(match.id)} className="delete-btn-small">
                                 🗑️
                             </button>
                         </div>

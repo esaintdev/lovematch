@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { MdDashboard, MdEdit, MdHistory, MdHome, MdLogout } from 'react-icons/md';
 import MessageManager from './MessageManager.jsx';
@@ -14,19 +15,30 @@ const AdminDashboard = () => {
     });
 
     useEffect(() => {
-        const history = JSON.parse(localStorage.getItem('matchHistory') || '[]');
+        const fetchStats = async () => {
+            const { data: history, error } = await supabase
+                .from('matches')
+                .select('percentage');
 
-        if (history.length > 0) {
-            const percentages = history.map(m => m.percentage);
-            const total = percentages.reduce((a, b) => a + b, 0);
+            if (error) {
+                console.error('Error fetching stats:', error);
+                return;
+            }
 
-            setStats({
-                totalMatches: history.length,
-                averagePercentage: Math.round(total / history.length),
-                highestMatch: Math.max(...percentages),
-                lowestMatch: Math.min(...percentages)
-            });
-        }
+            if (history && history.length > 0) {
+                const percentages = history.map(m => m.percentage);
+                const total = percentages.reduce((a, b) => a + b, 0);
+
+                setStats({
+                    totalMatches: history.length,
+                    averagePercentage: Math.round(total / history.length),
+                    highestMatch: Math.max(...percentages),
+                    lowestMatch: Math.min(...percentages)
+                });
+            }
+        };
+
+        fetchStats();
     }, []);
 
     return (

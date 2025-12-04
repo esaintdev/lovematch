@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { FaHeart } from 'react-icons/fa';
 import LoveForm from './LoveForm.jsx';
 import './styles/LoveCalculator.css';
@@ -62,28 +63,32 @@ const LoveCalculator = () => {
     return getRandomElement(loveMessages.low);
   };
 
-  const handleCalculate = ({ name1, name2 }) => {
+  const handleCalculate = async ({ name1, name2 }) => {
     setIsLoading(true);
 
-    // Simulate API call delay
-    setTimeout(() => {
-      const percentage = calculateLove(name1, name2);
-      const message = getLoveMessage(percentage);
+    // Calculate locally first (or we could move this logic to a Supabase Edge Function later)
+    const percentage = calculateLove(name1, name2);
+    const message = getLoveMessage(percentage);
+
+    try {
+      // Save to Supabase
+      const { error } = await supabase
+        .from('matches')
+        .insert([
+          { name1, name2, percentage, message }
+        ]);
+
+      if (error) throw error;
 
       setResult({ percentage, message });
+    } catch (error) {
+      console.error('Error saving match:', error);
+      // Still show result even if save fails, but maybe alert user?
+      // For now, we just show the result so the user experience isn't broken
+      setResult({ percentage, message });
+    } finally {
       setIsLoading(false);
-
-      // Save to match history
-      const history = JSON.parse(localStorage.getItem('matchHistory') || '[]');
-      history.unshift({
-        name1,
-        name2,
-        percentage,
-        message,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('matchHistory', JSON.stringify(history));
-    }, 1500);
+    }
   };
 
   return (
