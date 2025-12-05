@@ -40,7 +40,15 @@ const calculateLove = (name1, name2) => {
     hash = hash & hash;
   }
 
-  return Math.abs(hash) % 100 + 1;
+  // Generate base percentage (0-100)
+  const basePercentage = Math.abs(hash) % 100;
+
+  // Apply a bias toward higher percentages
+  // This formula shifts the distribution to favor 50-100 range
+  // while still maintaining deterministic results for same name pairs
+  const biasedPercentage = Math.floor(50 + (basePercentage / 2));
+
+  return Math.min(100, Math.max(50, biasedPercentage));
 };
 
 const LoveCalculator = () => {
